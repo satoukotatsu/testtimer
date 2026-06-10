@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>読書ストップウォッチ — 哲学と宗教全史</title>
+<style>
+  :root {
+    --bg: #1c1719;
+    --surface: #261f22;
+    --surface-2: #2f272b;
+    --line: #453940;
+    --text: #ece4dd;
+    --muted: #a8989c;
+    --faint: #7a6b70;
+    --wine: #8e3b4a;
+    --wine-bright: #c05a6c;
+    --gold: #c9a96a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .stage {
+    width: 100%;
+    max-width: 560px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 28px;
+    color: var(--text);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .clock-area {
+    padding: 32px 24px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .clock-area::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--wine);
+  }
+  #clock {
+    font-family: "SF Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 64px;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+  }
+  #clock.over { color: var(--gold); }
+  #status {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    min-height: 1.4em;
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  }
+  button:hover { background: #3a3036; border-color: var(--faint); }
+  button:active { transform: scale(0.97); }
+  button:focus-visible { outline: 2px solid var(--wine-bright); outline-offset: 2px; }
+  button.primary {
+    background: var(--wine);
+    border-color: var(--wine);
+    font-weight: 600;
+  }
+  button.primary:hover { background: var(--wine-bright); border-color: var(--wine-bright); }
+  .memo-area { padding: 20px 24px 24px; }
+  .memo-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .memo-head p { font-size: 13px; color: var(--muted); }
+  #headerPreview {
+    font-family: "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 13px;
+    color: var(--gold);
+    background: var(--surface-2);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  textarea {
+    width: 100%;
+    font-family: "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    resize: vertical;
+    min-height: 120px;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: var(--wine-bright);
+  }
+  .copy-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    justify-content: flex-end;
+  }
+  .footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--faint);
+    margin-top: 18px;
+    line-height: 1.8;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <p class="eyebrow">READING STOPWATCH</p>
+  <h1>哲学と宗教全史・読書記録</h1>
+
+  <div class="card">
+    <section class="clock-area" aria-label="ストップウォッチ">
+      <div id="clock" aria-live="off">00:00</div>
+      <p id="status">メモが取れるか、40分経つまで</p>
+      <div class="controls">
+        <button class="primary" id="startBtn" onclick="toggleTimer()">スタート</button>
+        <button onclick="resetTimer()">リセット</button>
+      </div>
+    </section>
+
+    <section class="memo-area" aria-label="読書メモ">
+      <div class="memo-head">
+        <p>読書メモ — コピーすると下の見出し行が先頭に付きます</p>
+      </div>
+      <div id="headerPreview">## 2026-06-10 0分0秒</div>
+      <textarea id="tmpl" rows="4" spellcheck="false">- 残ったこと: 
+- 引っかかり/疑問: 
+- 🎭舞台にするなら: </textarea>
+      <div class="copy-row">
+        <button onclick="clearMemo()">メモ欄をクリア</button>
+        <button class="primary" id="copyBtn" onclick="copyTemplate()">コピー</button>
+      </div>
+    </section>
+  </div>
+
+  <p class="footer-note">
+    終了条件はどちらか早いほう — 🎭メモが1個取れる / 40分経つ。<br>
+    どちらで終わっても「今日はできた」。
+  </p>
+</main>
+
+<script>
+let elapsed = 0;
+let running = false;
+let intervalId = null;
+let startEpoch = null;
+let baseElapsed = 0;
+const MARK = 40 * 60;
+
+const clockEl = document.getElementById('clock');
+const statusEl = document.getElementById('status');
+const startBtn = document.getElementById('startBtn');
+const previewEl = document.getElementById('headerPreview');
+const copyBtn = document.getElementById('copyBtn');
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function fmtClock(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return h > 0 ? h + ':' + pad(m) + ':' + pad(sec) : pad(m) + ':' + pad(sec);
+}
+
+function fmtJp(s) {
+  return Math.floor(s / 60) + '分' + (s % 60) + '秒';
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+
+function headerLine() {
+  return '## ' + todayStr() + ' ' + fmtJp(elapsed);
+}
+
+function render() {
+  clockEl.textContent = fmtClock(elapsed);
+  previewEl.textContent = headerLine();
+  clockEl.classList.toggle('over', elapsed >= MARK);
+}
+
+function tick() {
+  elapsed = baseElapsed + Math.floor((Date.now() - startEpoch) / 1000);
+  render();
+  if (elapsed >= MARK && !statusEl.dataset.marked) {
+    statusEl.dataset.marked = '1';
+    statusEl.textContent = '40分経過！ 今日はここまででOK（続けても可）';
+  }
+}
+
+function toggleTimer() {
+  if (running) {
+    running = false;
+    clearInterval(intervalId);
+    baseElapsed = elapsed;
+    startBtn.textContent = '再開';
+    statusEl.textContent = '一時停止中';
+  } else {
+    running = true;
+    startEpoch = Date.now();
+    intervalId = setInterval(tick, 250);
+    startBtn.textContent = '一時停止';
+    if (elapsed < MARK) statusEl.textContent = 'メモが取れるか、40分経つまで';
+  }
+}
+
+function resetTimer() {
+  clearInterval(intervalId);
+  running = false;
+  elapsed = 0;
+  baseElapsed = 0;
+  delete statusEl.dataset.marked;
+  startBtn.textContent = 'スタート';
+  statusEl.textContent = 'メモが取れるか、40分経つまで';
+  render();
+}
+
+function clearMemo() {
+  document.getElementById('tmpl').value = '- 残ったこと: \n- 引っかかり/疑問: \n- 🎭舞台にするなら: ';
+}
+
+function copyTemplate() {
+  const text = headerLine() + '\n' + document.getElementById('tmpl').value;
+  const done = () => {
+    if (running) toggleTimer();
+    copyBtn.textContent = 'コピーした！';
+    setTimeout(() => { copyBtn.textContent = 'コピー'; }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'absolute';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  done();
+}
+
+render();
+</script>
+</body>
+</html>
